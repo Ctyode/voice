@@ -1,0 +1,21 @@
+{
+  "svg_space": { "width": 552, "height": 551 },
+  "map": {
+    "x_from_G": { "clip": 0.35, "formula": "x = (G + clip)/(2*clip)" },
+    "px_from_norm": { "Xpx": "552*x", "Ypx": "551*(1-y)" }
+  },
+  "normalization": {
+    "pitch_y": { "f0_min_hz": 80.0, "f0_max_hz": 300.0 }
+  },
+  "recommended_centers_for_voice_csv": {
+    "female": { "px": { "x": 399.0, "y": 159.0 }, "norm": { "x": 0.722826, "y": 0.709100 } },
+    "male":   { "px": { "x": 149.0, "y": 333.0 }, "norm": { "x": 0.269928, "y": 0.395500 } }
+  },
+  "implied_G_at_clip_0_35": { "female": 0.15598, "male": -0.16105 },
+  "anchors_svg_as_is": {
+    "female": { "px": { "x": 399.0, "y": 153.0 }, "norm": { "x": 0.722826, "y": 0.722321 }, "G": 0.15598, "F0_equiv_Hz_at_[80,300]": 238.9 },
+    "male":   { "px": { "x": 149.0, "y": 399.0 }, "norm": { "x": 0.269928, "y": 0.275863 }, "G": -0.16105, "F0_equiv_Hz_at_[80,300]": 140.7 }
+  },
+  "ellipses_norm_radii": { "rx": 0.184783, "ry": 0.181487 },
+  "ellipse_radii_px": { "rx": 102.0, "ry": 100.0 }
+}

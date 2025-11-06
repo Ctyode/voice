@@ -1,0 +1,64 @@
+{
+  "dataset": "Gender Recognition by Voice (Kaggle, voice.csv)",
+  "samples_total": 3168,
+  "features_summary": {
+    "meanfreq": {
+      "female": { "mean": 0.1910, "std": 0.0299 },
+      "male":   { "mean": 0.1708, "std": 0.0263 }
+    },
+    "median": {
+      "female": { "mean": 0.1959, "std": 0.0321 },
+      "male":   { "mean": 0.1753, "std": 0.0374 }
+    },
+    "centroid": {
+      "female": { "mean": 0.1910, "std": 0.0299 },
+      "male":   { "mean": 0.1708, "std": 0.0263 }
+    },
+    "meanfun": {
+      "female": { "mean": 0.2360, "std": 0.0430 },
+      "male":   { "mean": 0.1670, "std": 0.0370 }
+    },
+    "minfun": {
+      "female": { "mean": 0.0890, "std": 0.0150 },
+      "male":   { "mean": 0.0790, "std": 0.0140 }
+    },
+    "maxfun": {
+      "female": { "mean": 0.4110, "std": 0.0940 },
+      "male":   { "mean": 0.2790, "std": 0.0860 }
+    },
+    "sp.ent": {
+      "female": { "mean": 0.892, "std": 0.022 },
+      "male":   { "mean": 0.869, "std": 0.028 }
+    },
+    "sfm": {
+      "female": { "mean": 0.081, "std": 0.010 },
+      "male":   { "mean": 0.083, "std": 0.010 }
+    },
+    "mode": {
+      "female": { "mean": 0.180, "std": 0.029 },
+      "male":   { "mean": 0.162, "std": 0.028 }
+    },
+    "dfrange": {
+      "female": { "mean": 5.671, "std": 3.856 },
+      "male":   { "mean": 4.318, "std": 3.001 }
+    },
+    "modindx": {
+      "female": { "mean": 0.170, "std": 0.108 },
+      "male":   { "mean": 0.177, "std": 0.130 }
+    }
+  },
+  "derived_differences": {
+    "F0_ratio_female_to_male": 1.41,
+    "centroid_ratio_female_to_male": 1.12,
+    "entropy_diff": 0.023,
+    "freq_range_ratio": 1.31
+  },
+  "notes": [
+    "Все значения нормированы в диапазоне 0–1 (по данным voice.csv).",
+    "meanfun отражает нормированный F0; centroid ≈ meanfreq.",
+    "Женские голоса имеют средний meanfun на 41% выше мужского и на 12% выше по centroid.",
+    "Эти значения могут использоваться как ML-референсы для bias-калибровки диагональных зон.",
+    "sp.ent (spectral entropy) коррелирует с восприятием открытости тембра; выше у женщин.",
+    "dfrange указывает на больший диапазон частоты доминант в женских голосах."
+  ]
+}

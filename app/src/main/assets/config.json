@@ -1,0 +1,175 @@
+{
+  "analysis": { "sr_hz": 48000, "frame_ms": 500, "hop_ms": 250, "fft_n": 4096, "window": "hann", "voiced_min_frames": 3 },
+
+  "bands": { "split_hz": 1800, "sc_max_hz": 5000 },
+
+  "f0_zone": { "low_max_hz": 175, "high_min_hz": 190 },
+
+  "weights": {
+    "deltaF_or_vtl": 0.42,
+    "F2": 0.10,
+    "H1_H2": 0.10,
+    "HF_LF_or_SC": 0.28,
+    "prosodyRange": 0.00,
+    "CPP_or_HNR": 0.10
+  },
+
+  "score": {
+    "bias": 0.10,
+    "gradient_clip": 0.35,
+    "hysteresis_windows": 3,
+    "bias_dynamic": { "enabled": false }
+  },
+
+  "zones_diagonal": {
+    "y_norm_f0_min_hz": 80,
+    "y_norm_f0_max_hz": 300,
+    "male_max_base": -0.34,
+    "male_max_slope": -0.06,
+    "andro_high_base": -0.08,
+    "andro_high_slope": 0.10,
+    "use_male_as_andro_low": true
+  },
+
+  "rules_female_lowF0": {
+    "deltaF_min_hz": 900,
+    "vtl_max_cm": 17.5,
+    "F2_min_hz": 1600,
+    "H1_H2_min_db": 6.5,
+    "EHF_LF_min": 0.85,
+    "SC_min_hz": 1400,
+    "prosody_min_semitones": 8.0,
+    "CPP_max_db": 13.0,
+    "HNR_max_db": 20.0,
+    "need_true_at_least": 4
+  },
+
+  "rules_male_lowF0": {
+    "deltaF_max_hz": 780,
+    "vtl_min_cm": 19.0,
+    "F2_max_hz": 1400,
+    "H1_H2_max_db": 6.0,
+    "EHF_LF_max": 0.60,
+    "SC_max_hz": 1350,
+    "prosody_max_semitones": 7.0,
+    "CPP_min_db": 13.0,
+    "HNR_min_db": 21.0,
+    "need_true_at_least": 6
+  },
+
+  "rules_male_highF0": {
+    "deltaF_max_hz": 780,
+    "vtl_min_cm": 19.0,
+    "F2_max_hz": 1400,
+    "H1_H2_max_db": 4.5,
+    "EHF_LF_max": 0.60,
+    "SC_max_hz": 1350,
+    "prosody_max_semitones": 7.0,
+    "CPP_min_db": 13.0,
+    "HNR_min_db": 21.0,
+    "need_true_at_least": 6
+  },
+
+  "hard_overrides": {
+    "enable": true,
+    "conditions": [
+      { "all": [
+        { "metric": "deltaF", "op": "<=", "value": 760 },
+        { "metric": "VTL",    "op": ">=", "value": 19.5 },
+        { "metric": "EHF_LF", "op": "<=", "value": 0.25 },
+        { "metric": "SC",     "op": "<=", "value": 800 }
+      ], "force_zone": "male" }
+    ]
+  },
+
+  "normalization": { "enable": true, "deltaF_ref_hz": 1000.0 },
+
+  "svg_layout": {
+    "canvas": { "x": 64, "y": 55, "width": 552, "height": 551, "center": { "x": 335.98, "y": 333.5 } },
+    "axes": {
+      "pitch": { "x": 335.98, "y1": 54.97, "y2": 606.0 },
+      "resonance": { "y": 333.5, "x1": 64.0, "x2": 616.0 }
+    }
+  },
+
+  "resonance_axis": {
+    "gain_x": 1.35,
+    "use_brightness_for_x": true,
+    "hf_lf_log10": true,
+    "weights": { "hf_lf": 0.35, "sc": 0.30, "vtl_inv": 0.15, "deltaF": 0.10, "h1_h2": 0.10 },
+    "ranges": {
+      "hf_lf_min": 0.00, "hf_lf_max": 1.80,
+      "sc_min_hz": 150,  "sc_max_hz": 2400,
+      "vtl_min_cm": 14,  "vtl_max_cm": 22,
+      "deltaF_min_hz": 700, "deltaF_max_hz": 1700,
+      "h1h2_min_db": -30, "h1h2_max_db": 12
+    },
+    "nonlinear": {
+      "hf_lf_left": { "type": "inv_sigmoid", "k": 6.0,  "mid": 0.20 },
+      "sc_left":    { "type": "inv_sigmoid", "k": 5.0,  "mid": 700  },
+      "h1h2_left":  { "type": "sigmoid",     "k": 0.18, "mid": -8   },
+      "vtl_right":  { "type": "sigmoid",     "k": 0.60, "mid": 16.5 },
+      "dF_right":   { "type": "sigmoid",     "k": 0.004,"mid": 1000 }
+    },
+    "overrides": { "dark_gate": { "enabled": false } }
+  },
+  "normalization": {
+    "enable": true,
+    "deltaF_ref_hz": 1000.0,
+    "resonance_x": { "clip": 0.40, "G_to_x": "x = clamp01((G + clip) / (2 * clip))" }
+  },
+
+  "resonance_axis": {
+    "gain_x": 1.75,
+    "use_brightness_for_x": true,
+    "hf_lf_log10": true,
+    "weights": { "hf_lf": 0.40, "sc": 0.30, "vtl_inv": 0.12, "deltaF": 0.08, "h1_h2": 0.10 },
+    "ranges": {
+      "hf_lf_min": 0.00, "hf_lf_max": 1.80,
+      "sc_min_hz": 120,  "sc_max_hz": 2400,
+      "vtl_min_cm": 14,  "vtl_max_cm": 22,
+      "deltaF_min_hz": 700, "deltaF_max_hz": 1700,
+      "h1h2_min_db": -36, "h1h2_max_db": 12
+    },
+    "nonlinear": {
+      "hf_lf_left": { "type": "inv_sigmoid", "k": 8.0,  "mid": 0.12 },
+      "sc_left":    { "type": "inv_sigmoid", "k": 7.0,  "mid": 600  },
+      "h1h2_left":  { "type": "sigmoid",     "k": 0.22, "mid": -10  },
+      "vtl_right":  { "type": "sigmoid",     "k": 0.55, "mid": 16.8 },
+      "dF_right":   { "type": "sigmoid",     "k": 0.004,"mid": 1000 }
+    },
+    "hard_floor": {
+      "enabled": true,
+      "x_min_when": [
+        { "all": [
+          { "metric": "F0",     "op": "<=", "value": 140 },
+          { "metric": "SC",     "op": "<=", "value": 600 },
+          { "metric": "EHF_LF", "op": "<=", "value": 0.08 }
+        ], "x_min": 0.18 }
+      ]
+    },
+    "overrides": { "dark_gate": { "enabled": false } }
+  },
+
+  "score": {
+    "bias": 0.06,
+    "gradient_clip": 0.40,
+    "hysteresis_windows": 3,
+    "bias_dynamic": {
+      "enabled": true,
+      "formula": "G' = G - k1*(y_low) - k2*(geom_male)",
+      "params": {
+        "k1": 0.10,
+        "k2": 0.10,
+        "y_low": { "type": "inv_sigmoid", "k": 8.0, "mid": 0.30 },
+        "geom_male": {
+          "all": [
+            { "metric": "VTL", "op": ">=", "value": 17.5 },
+            { "metric": "deltaF", "op": "<=", "value": 950 }
+          ],
+          "else": 0
+        }
+      }
+    }
+  }
+}
