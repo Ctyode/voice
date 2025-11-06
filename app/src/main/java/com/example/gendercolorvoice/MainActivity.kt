@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var overlay: LabelsOverlayView
     private lateinit var recorder: SessionRecorder
     private lateinit var logger: LogWriter
+    private lateinit var debugText: TextView
     private var windowAnalyzer: FeatureWindowAnalyzer? = null
     private val windowLog = mutableListOf<WindowFeatures>()
     private var latestWindow: WindowFeatures? = null
@@ -29,6 +30,11 @@ class MainActivity : ComponentActivity() {
     private var svgMapping: SvgMappingInfo? = null
     private var voiceStats: VoiceStats? = null
     private val recentBrightness = ArrayDeque<Float>()
+    // Debug panel state
+    private var dbgStats: PlaybackStats? = null
+    private var dbgStatsExtra: String? = null
+    private var dbgLive: List<String>? = null
+    private var dbgDebug: List<String>? = null
     private fun pushBrightness(v: Float) {
         recentBrightness.addLast(v)
         while (recentBrightness.size > 20) recentBrightness.removeFirst()
@@ -40,6 +46,31 @@ class MainActivity : ComponentActivity() {
         for (v in recentBrightness) { val d = v - m; s += d*d }
         return kotlin.math.sqrt(s / recentBrightness.size)
     }
+
+    private fun refreshDebugPanel() {
+        val parts = mutableListOf<String>()
+        dbgStats?.let { s ->
+            parts += "range x=[${fmt2(s.minX)}..${fmt2(s.maxX)}]"
+            parts += "range y=[${fmt2(s.minY)}..${fmt2(s.maxY)}]"
+            parts += "avg=(${fmt2(s.avgX)}, ${fmt2(s.avgY)})"
+            parts += if (s.hitMale) "hit male: yes" else "hit male: no"
+        }
+        dbgStatsExtra?.let { parts += it }
+        dbgLive?.let { parts.addAll(it) }
+        dbgDebug?.let {
+            if (parts.isNotEmpty()) parts += ""
+            parts.addAll(it)
+        }
+        val text = parts.joinToString("\n")
+        try {
+            runOnUiThread { debugText.text = text }
+        } catch (_: Throwable) {
+            // Fallback if not attached yet
+            debugText.post { debugText.text = text }
+        }
+    }
+
+    private fun fmt2(v: Float): String = String.format("%.2f", v)
 
     private val requestPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -94,11 +125,10 @@ class MainActivity : ComponentActivity() {
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
 
-        // Controls overlay (Record/Stop, Play) + status
+        // Bottom bar with controls + debug panel
         val controls = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(24, 24, 24, 24)
-            setBackgroundColor(0x66FFFFFF)
             gravity = Gravity.CENTER_VERTICAL
         }
         val btnRecord = Button(this).apply { text = "Record" }
@@ -112,14 +142,33 @@ class MainActivity : ComponentActivity() {
         controls.addView(btnShare)
         controls.addView(status)
 
-        val lp = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
+        debugText = TextView(this).apply {
+            setTextColor(Color.BLACK)
+            textSize = 12f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding(24, 8, 24, 16)
+        }
+
+        val bottomBar = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(0x66FFFFFF)
+        }
+        bottomBar.addView(controls, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+        bottomBar.addView(debugText, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+
+        val bottomLp = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.WRAP_CONTENT
         ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            bottomMargin = 32
+            gravity = Gravity.BOTTOM
         }
-        root.addView(controls, lp)
+        root.addView(bottomBar, bottomLp)
         setContentView(root)
 
         // Load and apply config
@@ -334,8 +383,8 @@ class MainActivity : ComponentActivity() {
             }
         )
         windowAnalyzer = FeatureWindowAnalyzer(sampleRate = 44100, onWindow = { wf ->
-            // Show compact summary on overlay
-            overlay.statsExtra = "ΔF=${wf.deltaF.toInt()}Hz, VTL=${String.format("%.1f", wf.vtlDeltaF)}cm, PR=${String.format("%.1f", wf.prosodyRangeSt)}st, SC=${wf.scHz.toInt()}Hz | L:${wf.decision.lowF0Count}/7 ${if (wf.decision.lowF0Hit) "✓" else ""} H:${wf.decision.highF0Count}/7 ${if (wf.decision.highF0Hit) "✓" else ""}"
+            // Update compact summary in debug panel
+            dbgStatsExtra = "ΔF=${wf.deltaF.toInt()}Hz, VTL=${String.format("%.1f", wf.vtlDeltaF)}cm, PR=${String.format("%.1f", wf.prosodyRangeSt)}st, SC=${wf.scHz.toInt()}Hz | L:${wf.decision.lowF0Count}/7 ${if (wf.decision.lowF0Hit) "✓" else ""} H:${wf.decision.highF0Count}/7 ${if (wf.decision.highF0Hit) "✓" else ""}"
             // Detailed brightness breakdown if enabled
             if (cfg.resAxis?.useBrightnessForX == true) {
                 fun norm(v: Float, a: Float, b: Float): Float { if (b <= a) return 0f; return ((v - a) / (b - a)).coerceIn(0f,1f) }
@@ -346,18 +395,19 @@ class MainActivity : ComponentActivity() {
                 val b_df  = norm(wf.deltaF, r.deltaFMinHz, r.deltaFMaxHz)
                 val b_h12 = norm(kotlin.math.max(0f, wf.h1MinusH2), r.h1h2MinDb, r.h1h2MaxDb)
                 val R = (w.hfLf*b_hf + w.sc*b_sc + w.vtlInv*b_vtl + w.deltaF*b_df + w.h1h2*b_h12).coerceIn(0f,1f)
-                overlay.liveLines = listOf(
+                dbgLive = listOf(
                     "F0 n=${wf.f0Valid.size} | SC=${wf.scHz.toInt()}Hz EHF/LF=${String.format("%.2f", wf.ehfOverElf)}",
                     "b_hf=${String.format("%.2f", b_hf)} b_sc=${String.format("%.2f", b_sc)} b_vtl=${String.format("%.2f", b_vtl)}",
                     "b_df=${String.format("%.2f", b_df)} b_h12=${String.format("%.2f", b_h12)} R=${String.format("%.2f", R)} X=${String.format("%.2f", R)}"
                 )
             } else {
-                overlay.liveLines = listOf(
+                dbgLive = listOf(
                     "F0 valid n=${wf.f0Valid.size}",
                     "F1=${wf.f1.toInt()} F2=${wf.f2.toInt()} F3=${wf.f3.toInt()} Hz",
                     "EHF/LF=${String.format("%.2f", wf.ehfOverElf)} H1-H2=${String.format("%.1f", wf.h1MinusH2)} dB"
                 )
             }
+            refreshDebugPanel()
             latestWindow = wf
             windowLog.add(wf)
         }, cfg = cfg)
@@ -366,15 +416,19 @@ class MainActivity : ComponentActivity() {
         btnRecord.setOnClickListener {
             if (!recorder.recording()) {
                 recorder.start()
-                overlay.stats = null
-                overlay.debugLines = null
+                dbgStats = null
+                dbgDebug = null
+                dbgStatsExtra = null
+                dbgLive = null
+                refreshDebugPanel()
                 status.text = "Recording…"
                 btnRecord.text = "Stop"
                 windowLog.clear()
             } else {
                 val seq = recorder.stop()
                 val st = recorder.computeStats(seq)
-                overlay.stats = st
+                dbgStats = st
+                refreshDebugPanel()
                 status.text = "Recorded ${seq.size} pts"
                 btnRecord.text = "Record"
                 // Build debug ranges from windowLog
@@ -394,14 +448,16 @@ class MainActivity : ComponentActivity() {
                     lines += "PR: ${windowLog.minOf { it.prosodyRangeSt }.format1()}..${windowLog.maxOf { it.prosodyRangeSt }.format1()} st"
                     lines += "L-rule count: ${windowLog.minOf { it.decision.lowF0Count }}..${windowLog.maxOf { it.decision.lowF0Count }}"
                     lines += "H-rule count: ${windowLog.minOf { it.decision.highF0Count }}..${windowLog.maxOf { it.decision.highF0Count }}"
-                    overlay.debugLines = lines
+                    dbgDebug = lines
+                    refreshDebugPanel()
                 }
             }
         }
         btnPlay.setOnClickListener {
             val seq = recorder.last()
             if (seq.isEmpty()) { status.text = "No data"; return@setOnClickListener }
-            overlay.stats = recorder.computeStats(seq)
+            dbgStats = recorder.computeStats(seq)
+            refreshDebugPanel()
             status.text = "Playing…"
             recorder.play(seq, fieldView) {
                 status.text = "Done"
@@ -411,9 +467,11 @@ class MainActivity : ComponentActivity() {
         btnReset.setOnClickListener {
             // Clear trail and on-screen stats; keep audio state
             fieldView.clearTrail()
-            overlay.stats = null
-            overlay.debugLines = null
-            overlay.liveLines = null
+            dbgStats = null
+            dbgDebug = null
+            dbgLive = null
+            dbgStatsExtra = null
+            refreshDebugPanel()
             overlay.categoryText = null
             recorder.clear()
             status.text = "Cleared"
